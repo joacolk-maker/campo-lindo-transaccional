@@ -1,0 +1,67 @@
+body {
+  font-size: 16px;
+}
+
+/* La información usada para decidir una compra debe conservarse legible. */
+.mechanism,
+.time-left,
+.seller-line small,
+.listing-price > span,
+.listing-price small,
+.listing-facts span,
+.listing-facts strong,
+.profile-tier,
+.score-row,
+.spec-list dt,
+.spec-list dd,
+.transaction-box > span,
+.transaction-box > small,
+.transaction-box label,
+.transaction-box p,
+.terms-note,
+.transaction-message,
+.publish-grid label,
+.login-dialog label,
+.activity-row small,
+.activity-header,
+.status,
+.history-row span,
+footer p {
+  font-size: 12px;
+}
+
+.seller-line strong,
+.market-count,
+.market-count small,
+.card-action,
+.odepa-link,
+.publish-side button,
+.publish-grid input,
+.publish-grid select,
+.publish-grid textarea,
+.login-dialog input,
+.publish-submit,
+.transaction-box button,
+.login-dialog > button:not(.modal-close),
+.history-row strong,
+.steps p {
+  font-size: 13px;
+}
+
+.filters > label,
+.eyebrow,
+.market-summary > p,
+.market-summary span,
+.market-summary small,
+.section-intro > button,
+.activity-heading > button,
+.login-button,
+.analytics-link {
+  font-size: 12px;
+}
+
+@media (max-width: 680px) {
+  .hero-copy {
+    font-size: 16px;
+  }
+}
