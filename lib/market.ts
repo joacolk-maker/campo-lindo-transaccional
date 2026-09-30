@@ -59,7 +59,7 @@ export type Activity = {
   quantity: number;
   unit: string;
   total: number;
-  status: 'Adjudicada' | 'Pago por confirmar' | 'Lista para retiro' | 'Entregada';
+  status: 'Adjudicada' | 'Pago por confirmar' | 'Pago confirmado' | 'Lista para retiro' | 'Entregada' | 'Aceptada' | 'En disputa' | 'Cancelada';
   updatedAt: string;
 };
 

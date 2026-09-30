@@ -2,7 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { buyNow, currentUser, loadListings, placeBid, publishListing, sendMagicLink, supplyBuyOrder } from '@/lib/market-api';
+import './activity.css';
+import { buyNow, currentUser, loadActivities, loadListings, placeBid, publishListing, sendMagicLink, supplyBuyOrder } from '@/lib/market-api';
 import { currency, DEMO_ACTIVITY, DEMO_LISTINGS, PRODUCTS, quantity, REGIONS, type Activity, type Listing } from '@/lib/market';
 
 type Modal = 'listing' | 'publish' | 'login' | 'activity' | null;
@@ -163,7 +164,15 @@ export default function Home() {
   const [product, setProduct] = useState('Todos los productos'); const [region, setRegion] = useState('Todas las regiones'); const [marketSide, setMarketSide] = useState<'ALL' | 'SELL' | 'BUY'>('ALL'); const [mode, setMode] = useState('Todas las modalidades');
   const [activities, setActivities] = useState<Activity[]>(DEMO_ACTIVITY); const [, setTick] = useState(0);
 
-  useEffect(() => { let active = true; Promise.all([loadListings(), currentUser()]).then(([data, authenticated]) => { if (!active) return; setListings(data); setSource('live'); setUser(authenticated); }).catch(() => { if (active) setSource('demo'); }); return () => { active = false; }; }, []);
+  useEffect(() => {
+    let active = true;
+    Promise.all([loadListings(), currentUser()]).then(([data, authenticated]) => {
+      if (!active) return;
+      setListings(data); setSource('live'); setUser(authenticated); setActivities([]);
+      if (authenticated) void loadActivities(authenticated.id).then((items) => { if (active) setActivities(items); }).catch(() => undefined);
+    }).catch(() => { if (active) setSource('demo'); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => { const timer = window.setInterval(() => setTick((v) => v + 1), 60_000); return () => window.clearInterval(timer); }, []);
 
   useEffect(() => {
@@ -224,11 +233,11 @@ export default function Home() {
       <div className="listings-grid">{filtered.map((item) => <ListingCard key={item.id} listing={item} onOpen={openListing} />)}{!filtered.length && <div className="no-results"><strong>No hay publicaciones para estos filtros.</strong><span>Pruebe otra región, producto o modalidad.</span></div>}</div>
     </section>
     <section className="trust-section" id="funciona"><div className="trust-heading"><p className="eyebrow">Cómo funciona</p><h2>Una operación completa, <em>no sólo un contacto.</em></h2></div><div className="steps"><article><span>01</span><h3>Publicación verificable</h3><p>Producto, calidad, unidad, ubicación general, cantidad, lote mínimo y condiciones quedan definidos.</p></article><article><span>02</span><h3>Precio y adjudicación</h3><p>Compra inmediata, subasta o demanda. Las pujas se ordenan por precio y luego por hora.</p></article><article><span>03</span><h3>Operación registrada</h3><p>Al cerrar se crea una orden con contraparte, precio, cantidad, fecha y obligaciones aceptadas.</p></article><article><span>04</span><h3>Entrega y reputación</h3><p>Las partes confirman retiro o entrega, adjuntan evidencia y construyen su historial comercial.</p></article></div></section>
-    <section className="activity-section" id="actividad"><div className="activity-heading"><div><p className="eyebrow">Panel transaccional</p><h2>Mis operaciones</h2></div><button onClick={() => setModal('activity')}>Ver historial completo</button></div><div className="activity-table"><div className="activity-row activity-header"><span>Operación</span><span>Producto</span><span>Contraparte</span><span>Valor</span><span>Estado</span></div>{activities.slice(0, 3).map((item) => <div className="activity-row" key={item.id}><strong>{item.id}<small>{item.updatedAt}</small></strong><span>{item.product}<small>{quantity.format(item.quantity)} {item.unit}</small></span><span>{item.counterparty}</span><b>{currency.format(item.total)}</b><i className={`status status-${item.status.toLowerCase().replaceAll(' ', '-')}`}>{item.status}</i></div>)}</div></section>
+    <section className="activity-section" id="actividad"><div className="activity-heading"><div><p className="eyebrow">Panel transaccional</p><h2>Mis operaciones</h2></div><button onClick={() => setModal('activity')}>Ver historial completo</button></div><div className="activity-table"><div className="activity-row activity-header"><span>Operación</span><span>Producto</span><span>Contraparte</span><span>Valor</span><span>Estado</span></div>{activities.slice(0, 3).map((item) => <div className="activity-row" key={item.id}><strong>{item.id}<small>{item.updatedAt}</small></strong><span>{item.product}<small>{quantity.format(item.quantity)} {item.unit}</small></span><span>{item.counterparty}</span><b>{currency.format(item.total)}</b><i className={`status status-${item.status.toLowerCase().replaceAll(' ', '-')}`}>{item.status}</i></div>)}{!activities.length && <div className="activity-empty">{source === 'live' && !user ? 'Ingrese para ver sus operaciones reales.' : 'Aún no registra operaciones.'}</div>}</div></section>
     <footer><div className="brand"><span className="brand-mark"><i /></span><span>Campo Lindo Transaccional</span></div><p>Piloto experimental · Información ODEPA utilizada únicamente como referencia de mercado.</p></footer>
     {modal === 'listing' && selected && <ListingDialog listing={selected} onClose={() => setModal(null)} live={source === 'live'} user={user} onComplete={(activity) => setActivities((current) => [activity, ...current])} />}
     {modal === 'publish' && <PublishDialog onClose={() => setModal(null)} live={source === 'live'} user={user} onCreated={(listing) => { setListings((current) => [listing, ...current]); setModal(null); }} />}
     {modal === 'login' && <LoginDialog onClose={() => setModal(null)} />}
-    {modal === 'activity' && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><section className="history-dialog" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}>×</button><p className="eyebrow">Trazabilidad</p><h2>Historial de operaciones</h2>{activities.map((item) => <div className="history-row" key={item.id}><div><strong>{item.id} · {item.product}</strong><span>{item.counterparty} · {item.updatedAt}</span></div><div><b>{currency.format(item.total)}</b><i className="status">{item.status}</i></div></div>)}</section></div>}
+    {modal === 'activity' && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><section className="history-dialog" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}>×</button><p className="eyebrow">Trazabilidad</p><h2>Historial de operaciones</h2>{activities.map((item) => <div className="history-row" key={item.id}><div><strong>{item.id} · {item.product}</strong><span>{item.counterparty} · {item.updatedAt}</span></div><div><b>{currency.format(item.total)}</b><i className="status">{item.status}</i></div></div>)}{!activities.length && <div className="history-empty">{source === 'live' && !user ? 'Ingrese para consultar su historial.' : 'Aún no hay operaciones registradas.'}</div>}</section></div>}
   </main>;
 }

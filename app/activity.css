@@ -1,0 +1,7 @@
+.activity-empty,
+.history-empty {
+  padding: 34px 18px;
+  color: #74827b;
+  font-size: 10px;
+  text-align: center;
+}

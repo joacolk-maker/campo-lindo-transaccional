@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import { getSupabase } from './supabase';
-import type { Listing } from './market';
+import type { Activity, Listing } from './market';
 
 type DbListing = {
   id: string; side: 'SELL' | 'BUY'; mechanism: 'FIXED' | 'AUCTION' | 'BUY_ORDER';
@@ -9,6 +9,31 @@ type DbListing = {
   current_price: number | null; bid_increment: number | null; ends_at: string; availability: string;
   description: string; partial_fills: boolean; status: Listing['status']; bid_count: number | null;
   owner: { id: string; display_name: string; region: string; comuna: string; verified: boolean; rating: number; operations: number; completion_rate: number; quality_score: number; tier: Listing['seller']['tier'] } | null;
+};
+
+type DbTrade = {
+  id: string;
+  seller_id: string;
+  buyer_id: string;
+  quantity: number;
+  unit: string;
+  total_value: number;
+  status: 'AWARDED' | 'PAYMENT_PENDING' | 'PAYMENT_CONFIRMED' | 'READY' | 'DELIVERED' | 'ACCEPTED' | 'DISPUTED' | 'CANCELLED';
+  updated_at: string;
+  listing: { product: string; variety: string } | null;
+  seller: { display_name: string } | null;
+  buyer: { display_name: string } | null;
+};
+
+const tradeStatus: Record<DbTrade['status'], Activity['status']> = {
+  AWARDED: 'Adjudicada',
+  PAYMENT_PENDING: 'Pago por confirmar',
+  PAYMENT_CONFIRMED: 'Pago confirmado',
+  READY: 'Lista para retiro',
+  DELIVERED: 'Entregada',
+  ACCEPTED: 'Aceptada',
+  DISPUTED: 'En disputa',
+  CANCELLED: 'Cancelada',
 };
 
 function mapListing(row: DbListing): Listing {
@@ -39,6 +64,31 @@ export async function loadListings(): Promise<Listing[]> {
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data as unknown as DbListing[]).map(mapListing);
+}
+
+export async function loadActivities(userId: string): Promise<Activity[]> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase no configurado');
+  const { data, error } = await supabase
+    .from('market_trades')
+    .select('id,seller_id,buyer_id,quantity,unit,total_value,status,updated_at,listing:market_listings!listing_id(product,variety),seller:market_profiles!seller_id(display_name),buyer:market_profiles!buyer_id(display_name)')
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return (data as unknown as DbTrade[]).map((row) => {
+    const buying = row.buyer_id === userId;
+    const product = row.listing ? `${row.listing.product} ${row.listing.variety}` : 'Producto';
+    return {
+      id: row.id.slice(0, 8).toUpperCase(),
+      side: buying ? 'BUY' : 'SELL',
+      product,
+      counterparty: buying ? (row.seller?.display_name ?? 'Vendedor verificado') : (row.buyer?.display_name ?? 'Comprador verificado'),
+      quantity: Number(row.quantity),
+      unit: row.unit,
+      total: Number(row.total_value),
+      status: tradeStatus[row.status],
+      updatedAt: new Intl.DateTimeFormat('es-CL', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(row.updated_at)),
+    };
+  });
 }
 
 export async function placeBid(listingId: string, unitPrice: number, bidQuantity: number) {
