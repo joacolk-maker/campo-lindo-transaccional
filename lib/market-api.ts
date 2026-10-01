@@ -171,6 +171,37 @@ export async function sendMagicLink(email: string) {
   if (error) throw error;
 }
 
+export async function signInWithPassword(email: string, password: string): Promise<User> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase no configurado');
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.user) throw new Error('No fue posible iniciar la sesión.');
+  return data.user;
+}
+
+export async function signUpWithPassword(displayName: string, email: string, password: string): Promise<User | null> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase no configurado');
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: typeof window === 'undefined' ? undefined : window.location.href,
+      data: { display_name: displayName },
+    },
+  });
+  if (error) throw error;
+  return data.session ? data.user : null;
+}
+
+export async function signOut() {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
 export async function currentUser(): Promise<User | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
