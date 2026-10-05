@@ -9,7 +9,7 @@ Mercado agrícola experimental separado de la web analítica ODEPA. Implementa e
 - Órdenes de compra publicadas por compradores.
 - Lotes divisibles, cantidad mínima y adjudicación parcial.
 - Perfiles verificados, reputación y ubicación general.
-- Compradores enmascarados durante la puja.
+- Participantes identificados por nombre comercial, ubicación general, verificación e historial.
 - Operaciones y eventos auditables.
 - Supabase Auth, PostgreSQL, RLS y Storage preparados.
 
