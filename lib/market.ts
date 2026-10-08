@@ -47,8 +47,37 @@ export type Listing = {
   availability: string;
   description: string;
   partialFills: boolean;
+  fulfillmentDate?: string;
+  availabilityMode?: 'NOW' | 'FUTURE';
+  createdAt?: string;
   status: ListingStatus;
   seller: Seller;
+};
+
+export type MarketAccess = {
+  id: string;
+  displayName: string;
+  verified: boolean;
+  verificationStatus: 'PENDING' | 'IN_REVIEW' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
+  isAdmin: boolean;
+};
+
+export type MarketBid = {
+  id: string;
+  listingId: string;
+  product: string;
+  variety: string;
+  unitPrice: number;
+  quantity: number;
+  allocatedQuantity: number;
+  status: 'ACTIVE' | 'OUTBID' | 'WON' | 'PARTIAL' | 'LOST' | 'CANCELLED';
+  createdAt: string;
+};
+
+export type MarketPortfolio = {
+  listings: Listing[];
+  bids: MarketBid[];
+  trades: Activity[];
 };
 
 export type Activity = {
